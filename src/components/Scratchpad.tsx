@@ -97,15 +97,17 @@ export const Scratchpad: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!text.trim() && tags.length === 0) return;
+    if (!text.trim()) return;
 
-    // In a real app, send text and tags to Supabase here
-    console.log('Submitting:', {
-      text,
-      tags,
-      timestamp: new Date(),
+    const { error } = await supabase.from('notes').insert({
+      text: text,
+      tags: tags,
       parent_id: replyingToNote ? replyingToNote.id : null,
     });
+
+    if (error) {
+      console.error('Error submitting note: ', error);
+    }
 
     // Reload data
     fetchData();
