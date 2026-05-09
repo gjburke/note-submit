@@ -266,8 +266,8 @@ export const Scratchpad: React.FC = () => {
       />
 
       {/* Tag Input Area */}
-      <div 
-        className="tag-container relative" 
+      <div
+        className="tag-container relative"
         style={{ flexWrap: 'wrap' }}
         onClick={(e) => {
           // Focus the tag input if the user clicks anywhere in the container,
