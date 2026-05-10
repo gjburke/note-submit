@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Image, Send, LayoutList, ChevronDown, Hash, X } from 'lucide-react';
 import Fuse from 'fuse.js';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, subDays } from 'date-fns';
 import type { Database } from '../database.types';
 import { supabase } from '../supabaseClient';
 
@@ -36,9 +36,12 @@ export const Scratchpad: React.FC = () => {
   const tagInputRef = useRef<HTMLInputElement>(null);
 
   const fetchNotes = async () => {
+    const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+
     const { data, error } = await supabase
       .from('notes')
       .select('*')
+      .gte('created_at', sevenDaysAgo)
       .order('created_at', { ascending: false }); // Put newest notes at the top
 
     if (error) {
