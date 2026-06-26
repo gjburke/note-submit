@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# Note Submit
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React and TypeScript application built with Vite to submit notes to a Supabase database.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js
+- Yarn
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Install dependencies:
+   ```bash
+   yarn install
+   ```
 
-## Expanding the ESLint configuration
+2. Copy the environment variables template and configure the values:
+   ```bash
+   cp .env.example .env
+   ```
+   Add your Supabase URL and publishable key to `.env`.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+3. Start the development server:
+   ```bash
+   yarn dev
+   ```
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Database Schema
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Create a `notes` table in the `public` schema of your Supabase database with the following structure:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Columns
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+| Column | Type | Default Value | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `uuid` | `gen_random_uuid()` | Primary Key |
+| `created_at` | `timestamptz` | `now()` | Timestamp of creation (Not Null) |
+| `text` | `text` | - | The note body (Not Null) |
+| `tags` | `text[]` | `'{}'::text[]` | Array of associated tags (Not Null) |
+| `parent_id` | `uuid` | `null` | References `notes.id` (Foreign Key, on delete set null) |
+| `user_id` | `uuid` | `auth.uid()` | References `auth.users.id` (Foreign Key, on delete cascade, Not Null) |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Row Level Security (RLS)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Enable RLS on the `notes` table and add the following policies:
+
+- **Select:** Allow users to view only their own notes.
+  - Condition: `auth.uid() = user_id`
+- **Insert:** Allow users to insert notes only for their authenticated session.
+  - Condition: `auth.uid() = user_id`
+
+## Authentication
+
+This application uses GitHub OAuth for user authentication.
+
+To configure GitHub authentication:
+1. Register a GitHub OAuth application. Refer to the [Supabase GitHub OAuth Guide](https://supabase.com/docs/guides/auth/social-login/auth-github) for configuration steps.
+2. Enable the GitHub provider in your Supabase project dashboard under Auth > Providers, and input your GitHub Client ID and Client Secret.
