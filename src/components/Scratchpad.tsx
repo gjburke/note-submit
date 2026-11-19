@@ -28,6 +28,7 @@ export const Scratchpad: React.FC = () => {
   const [text, setText] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const [recents, setRecents] = useState<Note[]>([]);
   const [replyingToNote, setReplyingToNote] = useState<Note | null>(null);
   const [isRecentsOpen, setIsRecentsOpen] = useState(false);
@@ -51,10 +52,15 @@ export const Scratchpad: React.FC = () => {
     }
   };
 
-  const allTags = useMemo(() => {
-    const flatList = recents.flatMap((note) => note.tags || []);
-    return Array.from(new Set(flatList));
-  }, [recents]);
+  const fetchTags = async () => {
+    const { data, error } = await supabase.rpc('get_all_tags');
+
+    if (error) {
+      console.error('Error fetching tags:', error.message);
+    } else {
+      setAllTags((prev) => [...new Set([...prev, ...(data || [])])]);
+    }
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -64,6 +70,7 @@ export const Scratchpad: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    fetchTags();
     // Auto-focus on mount
     textareaRef.current?.focus();
   }, []);
@@ -110,7 +117,10 @@ export const Scratchpad: React.FC = () => {
 
     if (error) {
       console.error('Error submitting note: ', error);
+      return;
     }
+
+    setAllTags((prev) => [...new Set([...prev, ...tags])]);
 
     // Reload data
     fetchData();
